@@ -179,7 +179,7 @@ FollowerStatus TrajectoryFollower::traverseTrajectory(Motion2D &motionCmd, const
         // we execute the point turn only if the distance error is not to big
         // otherwise we skip it and let the automatic point turn correct the trajectory
         const Eigen::Vector2d diffVector = robotPose.position.head<2>() - trajectory.goalPose.position.head<2>();
-        if(diffVector.norm() > 0.3) {
+        if(diffVector.norm() > 1) {
             pointTurnDirection = 1.;
             followerStatus = TRAJECTORY_FINISHED;
             LOG_INFO_S << "Skip TurnOnTheSpot since distance to trajectory is to high";
@@ -192,8 +192,8 @@ FollowerStatus TrajectoryFollower::traverseTrajectory(Motion2D &motionCmd, const
             actualHeading = 2*M_PI + actualHeading;
         if (targetHeading < 0)
             targetHeading = 2*M_PI + targetHeading;
-        double error       = actualHeading - targetHeading;
 
+        double error       = actualHeading - targetHeading;
         Eigen::AngleAxisd currentAxisRot(actualHeading,Eigen::Vector3d::UnitZ());
         Eigen::AngleAxisd targetAxisRot(targetHeading,Eigen::Vector3d::UnitZ());
         Eigen::Vector3d currentRot = currentAxisRot * Eigen::Vector3d::UnitX();
@@ -201,12 +201,10 @@ FollowerStatus TrajectoryFollower::traverseTrajectory(Motion2D &motionCmd, const
         Eigen::Vector3d cross      = currentRot.cross(desiredRot).normalized();
 
         followerStatus        = EXEC_TURN_ON_SPOT;
-
         if (cross.z() == -1)
             pointTurnDirection = -1.;
         else
             pointTurnDirection =  1.;
-
         if ((error < -headingErrorTolerance || error > headingErrorTolerance))
         {
             motionCmd.rotation = pointTurnDirection * followerConf.pointTurnVelocity;
